@@ -235,6 +235,7 @@ class Channel extends React.Component {
 
     const messages = this.state.messages.map((e) => {
       return <Message
+                hash={e.hash}
                 message={e}
                 key={e.hash}
                 onDragEnter={this.onDragEnter.bind(this)}

@@ -22,6 +22,7 @@ class Message extends React.Component {
 
   componentDidMount() {
     ChannelActions.loadPost(this.props.message.value, (err, post) => {
+      // TODO: remove when MessageStore can handle these
       if(post && post.content) {
         if(post.content.startsWith('/me'))
           this.setState({ isCommand: true });
@@ -68,6 +69,7 @@ class Message extends React.Component {
         <span className="Timestamp">{ts}</span>
         <User userId={this.state.post ? this.state.post.meta.from : null} colorify={this.props.colorifyUsername} highlight={this.state.isCommand}/>
         <div className={contentClass}>{content}</div>
+        <div className=""><a href={"https://ipfs.io/ipfs/" + this.props.hash} target="_blank">copy</a></div>
       </div>
     );
   }
