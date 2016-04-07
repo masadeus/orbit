@@ -7,8 +7,6 @@ var AppActions = Reflux.createActions([
   "setCurrentChannel",
   "windowLostFocus",
   "windowOnFocus"
-  // "increaseUnreadMessagesCount",
-  // "increaseMentionsCount",
 ]);
 
 export default AppActions;

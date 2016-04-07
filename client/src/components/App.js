@@ -10,18 +10,19 @@ import AppActions from 'actions/AppActions';
 import UIActions from "actions/UIActions";
 import SocketActions from 'actions/SocketActions';
 import NetworkActions from 'actions/NetworkActions';
-import NotificationActions from 'actions/NotificationActions';
 
 import AppStateStore from 'stores/AppStateStore';
 import UserStore from 'stores/UserStore';
-import UserActions from 'actions/UserActions';
 import NetworkStore from 'stores/NetworkStore';
 import ConnectionStore from 'stores/ConnectionStore';
 import ChannelStore from 'stores/ChannelStore';
-import MessageStore from 'stores/MessageStore';
-import UsersStore from 'stores/UsersStore';
+// TODO: use SettingsStore.theme directly, not via state
 import SettingsStore from 'stores/SettingsStore';
+
+// imported to make sure they get into the build
 import LoadingStateStore from 'stores/LoadingStateStore';
+import UsersStore from 'stores/UsersStore';
+import MessageStore from 'stores/MessageStore';
 
 import ChannelsPanel from 'components/ChannelsPanel';
 import ChannelView from 'components/ChannelView';
@@ -64,31 +65,21 @@ var App = React.createClass({
     UIActions.showChannel.listen(this.showChannel);
     NetworkActions.joinedChannel.listen(this.onJoinedChannel);
     NetworkActions.joinChannelError.listen(this.onJoinChannelError);
-    SocketActions.socketDisconnected.listen(this.onDaemonDisconnected);
-    // NotificationActions.newMessage.listen(this._handleNewMessage);
-    // NotificationActions.mention.listen(this._handleMention);
+    SocketActions.socketDisconnected.listen(this.onDaemonDisconnected); // TODO: move to connections store, listen for connection updated from the store
 
     this.unsubscribeFromConnectionStore = ConnectionStore.listen(this.onDaemonConnected);
     this.unsubscribeFromNetworkStore = NetworkStore.listen(this.onNetworkUpdated);
-    this.unsubscribeFromUserStore = UserStore.listen(this.onUserUpdated);
+    this.unsubscribeFromUserStore = UserStore.listen(this._onUserUpdated);
     this.stopListeningAppState = AppStateStore.listen(this._handleAppStateChange);
     this.unsubscribeFromSettingsStore = SettingsStore.listen((settings) => {
       this.setState({ theme: Themes[settings.theme] || null });
     });
 
-    window.onblur = () => {
-      AppActions.windowLostFocus();
-      console.log("LOST FOCUS!");
-    };
-
-    window.onfocus = () => {
-      AppActions.windowOnFocus();
-      console.log("GOT FOCUS!");
-    };
+    window.onblur = () => AppActions.windowLostFocus();
+    window.onfocus = () => AppActions.windowOnFocus();
   },
   _handleAppStateChange: function(state) {
-    console.log("STATE CHANGED", state);
-
+    // console.log("STATE CHANGED", state);
     let prefix = '', suffix = '';
 
     if(!AppStateStore.state.hasFocus && AppStateStore.state.unreadMessages[AppStateStore.state.currentChannel] > 0)
@@ -99,7 +90,6 @@ var App = React.createClass({
 
     if(Object.keys(state.mentions).length > 0)
       prefix = '!';
-
 
     if(state.currentChannel) {
       document.title = prefix + ' ' + AppStateStore.state.location + ' ' + suffix;
@@ -112,23 +102,6 @@ var App = React.createClass({
     if(state.currentChannel || state.location)
       this.closePanel();
   },
-  // _handleMention: function(channel, message) {
-  //   if(channel !== AppStateStore.state.currentChannel || !AppStateStore.state.hasFocus) {
-  //     // document.title = '! ' + (AppStateStore.state.location ? AppStateStore.state.location : 'Orbit');
-  //     // console.log("TITLE2", document.title);
-  //   }
-  // },
-  // _handleNewMessage: function(channel, message) {
-  //   let prefix = '';
-  //   if(channel === AppStateStore.state.currentChannel && !AppStateStore.state.hasFocus) {
-  //     if(AppStateStore.state.unreadMessages[channel])
-  //       prefix = `(${AppStateStore.state.unreadMessages[channel]})`;
-  //   } else if(!AppStateStore.state.hasFocus) {
-  //     prefix = '*';
-  //   }
-  //   // document.title = prefix + ' ' + (AppStateStore.state.location ? AppStateStore.state.location : 'Orbit');
-  //   // console.log("TITLE1", document.title);
-  // },
   _reset: function() {
     this.setState(this.getInitialState());
   },
@@ -145,11 +118,9 @@ var App = React.createClass({
     this.setState({ user: null });
     AppActions.setLocation("Connect");
   },
-  onUserUpdated: function(user) {
-    console.log("User updated", user);
-
+  _onUserUpdated: function(user) {
+    // console.log("User updated", user);
     if(!user) {
-      console.log("1");
       AppActions.setLocation("Connect");
       return;
     }
@@ -159,7 +130,6 @@ var App = React.createClass({
 
     this.setState({ user: user });
 
-    console.log("3");
     if(!this.state.panelOpen) this.openPanel();
     AppActions.setLocation(null);
   },
@@ -182,7 +152,7 @@ var App = React.createClass({
   },
   showChannel: function(channel) {
     document.title = `#${channel}`;
-    console.log("TITLE", document.title);
+    // console.log("TITLE", document.title);
     AppActions.setCurrentChannel(channel);
   },
   openSettings: function() {

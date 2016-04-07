@@ -170,6 +170,9 @@ const MessageStore = Reflux.createStore({
       if(post && post.content) {
         if(hasMentions(post.content.toLowerCase(), UserStore.user.username.toLowerCase()))
           NotificationActions.mention(channel, post.content);
+        // TODO: add isCommand check
+        // TODO: mutate data so that it includes isCommand and hasMentions
+        // TODO: store as { post: post, isCommand: true, hasMentions: true }
       }
     });
   },
