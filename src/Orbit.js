@@ -11,7 +11,6 @@ const Post         = require('orbit-db/src/post/Post');
 const Network      = require('./NetworkConfig');
 const utils        = require('./utils');
 
-/* HANDLER - TODO: move to its own file */
 class Orbit {
   constructor(ipfs, events) {
     this.ipfs = ipfs;
@@ -91,8 +90,9 @@ class Orbit {
   }
 
   getSwarmPeers(callback) {
-    const peers = await(this.ipfs.swarm.peers());
-    if(callback) callback(peers.Strings);
+    this.ipfs.swarm.peers().then((peers) => {
+      if(callback) callback(peers.Strings);
+    });
   }
 
   getMessages(channel, lessThanHash, greaterThanHash, amount, callback) {
@@ -106,8 +106,9 @@ class Orbit {
 
   getPost(hash, callback) {
     try {
-      const res = await(this.ipfs.object.get(hash));
-      if(callback) callback(null, JSON.parse(res.Data));
+      this.ipfs.object.get(hash).then((res) => {
+        if(callback) callback(null, JSON.parse(res.Data));
+      });
     } catch(e) {
       this._handleError(e);
       if(callback) callback(e.message, null);
@@ -115,18 +116,25 @@ class Orbit {
   }
 
   sendMessage(channel, message, callback) {
-    try {
-      logger.debug(`Send message to #${channel}: ${message}`);
-      const data = {
-        content: message,
-        from: this.orbit.user.id
-      };
-      const post = await(Post.create(this.ipfs, Post.Types.Message, data));
-      this._channels[channel].db.add(post.Hash);
-      if(callback) callback(null);
-    } catch(e) {
-      this._handleError(e);
-      if(callback) callback(e.message);
+    if(message.startsWith('/') && !message.startsWith('/me')) {
+      // TODO: do commands
+      logger.debug(`#{channel} - Command: ${message}`)
+    } else {
+      // Treat everything else as sending a message to the channel
+      try {
+        logger.debug(`Send message to #${channel}: ${message}`);
+        const data = {
+          content: message,
+          from: this.orbit.user.id
+        };
+        Post.create(this.ipfs, Post.Types.Message, data).then((post) => {
+          this._channels[channel].db.add(post.Hash);
+          if(callback) callback(null);
+        });
+      } catch(e) {
+        this._handleError(e);
+        if(callback) callback(e.message);
+      }
     }
   }
 
@@ -158,24 +166,25 @@ class Orbit {
     };
 
     const type = isDirectory ? Post.Types.Directory : Post.Types.File;
-    const post = await(Post.create(this.ipfs, type, data));
-
-    this._channels[channel].db.add(post.Hash);
-
-    if(callback) callback(null);
+    Post.create(this.ipfs, type, data).then((post) => {
+      this._channels[channel].db.add(post.Hash);
+      if(callback) callback(null);
+    });
   }
 
   getDirectory(hash, callback) {
     try {
-      const result = await(this.ipfs.ls(hash));
-      if(result.Objects && callback)
-        callback(result.Objects[0].Links);
+      this.ipfs.ls(hash).then((result) => {
+        if(result.Objects && callback)
+          callback(result.Objects[0].Links);
+      });
     } catch(e) {
       this._handleError(e);
       if(callback) callback(null);
     }
   }
 
+  /* Properties */
   get user() {
     return this.orbit.user;
   }
@@ -184,6 +193,12 @@ class Orbit {
     return this.orbit.network;
   }
 
+  /* External event handlers */
+  onSocketConnected(socket) {
+    this.events.emit('network', this.orbit);
+  }
+
+  /* Internal event handlers */
   _handleError(e) {
     logger.error(e.message);
     logger.debug("Stack trace:\n", e.stack);
@@ -200,10 +215,6 @@ class Orbit {
 
   _handleStopLoading(action, channel) {
     this.events.emit('db.loaded', action, channel)
-  }
-
-  onSocketConnected(socket) {
-    this.events.emit('network', this.orbit);
   }
 
 }
