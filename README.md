@@ -12,9 +12,7 @@ There's currently a server (https://github.com/haadcode/orbit-server) that track
 
 **Please note that Orbit is not secure at the moment!**
 
-![Screenshot 1](https://raw.githubusercontent.com/haadcode/orbit/master/screenshots/screenshot4%202016-04-16.png)
-![Screenshot 2](https://raw.githubusercontent.com/haadcode/orbit/master/screenshots/screenshot3%202016-04-14.png)
-![Screenshot 3](https://raw.githubusercontent.com/haadcode/orbit/master/screenshots/screenshot6%202016-04-17.png)
+![Screenshot 1](https://github.com/masadeus/orbit/blob/master/assets/orbit_screenshot.png)
 
 ## Requirements
 - Node.js v4.x.x
@@ -108,7 +106,7 @@ grunt serve
 
 Start Electron:
 ```
-ENV=dev ./node_modules/.bin/electron . 
+ENV=dev ./node_modules/.bin/electron .
 ```
 
 Make sure you don't have the node.js version running and no client open the browser.
